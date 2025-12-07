@@ -338,64 +338,63 @@
     </div>
 
     <script>
-       const API_URL =
-         "https://weater-kaohsiung.zeabur.app/api/weather/kaohsiung";
+      const API_URL =
+        "https://weater-kaohsiung.zeabur.app/api/weather/kaohsiung";
 
-       function getWeatherIcon(weather) {
+      function getWeatherIcon(weather) {
+        // 增加一些城市感的圖示，但主要仍是天氣
+        if (!weather) return "🏙️";
+        if (weather.includes("晴")) return "🌞";
+        if (weather.includes("多雲")) return "🌥️";
+        if (weather.includes("陰")) return "☁️";
+        if (weather.includes("雨")) return "🌧️";
+        if (weather.includes("雷")) return "⚡️"; // 閃電比雷陣雨更俐落
+        return "🏙️";
+      }
 
-         <!-- // 增加一些城市感的圖示，但主要仍是天氣
-         if (!weather) return "🏙️";
-         if (weather.includes("晴")) return "🌞";
-         if (weather.includes("多雲")) return "🌥️";
-         if (weather.includes("陰")) return "☁️";
-         if (weather.includes("雨")) return "🌧️";
-         if (weather.includes("雷")) return "⚡️"; // 閃電比雷陣雨更俐落
-         return "🏙️"; -->
-       }
+      function getAdvice(rainProb, maxTemp) {
+        let rainIcon = "🚫";
+        let rainText = "城市巡邏免雨具";
+        if (parseInt(rainProb) > 30) {
+          rainIcon = "☂️";
+          rainText = "朱蒂，帶上雨傘！"; // 使用角色名稱
+        }
 
-       function getAdvice(rainProb, maxTemp) {
-         let rainIcon = "🚫";
-         let rainText = "城市巡邏免雨具";
-         if (parseInt(rainProb) > 30) {
-           rainIcon = "☂️";
-           rainText = "朱蒂，帶上雨傘！"; // 使用角色名稱
-         }
+        let clothIcon = "👔";
+        let clothText = "尼克，俐落穿搭"; // 使用角色名稱
+        if (parseInt(maxTemp) >= 28) {
+          clothIcon = "😎";
+          clothText = "超級熱！墨鏡出動";
+        } else if (parseInt(maxTemp) <= 20) {
+          clothIcon = "🧥";
+          clothText = "加件外套，小心感冒";
+        }
 
-         let clothIcon = "👔";
-         let clothText = "尼克，俐落穿搭"; // 使用角色名稱
-         if (parseInt(maxTemp) >= 28) {
-           clothIcon = "😎";
-           clothText = "超級熱！墨鏡出動";
-         } else if (parseInt(maxTemp) <= 20) {
-           clothIcon = "🧥";
-           clothText = "加件外套，小心感冒";
-         }
+        return { rainIcon, rainText, clothIcon, clothText };
+      }
 
-         return { rainIcon, rainText, clothIcon, clothText };
-       }
+      function getTimePeriod(startTime) {
+        const hour = new Date(startTime).getHours();
+        if (hour >= 5 && hour < 11) return "上午時段";
+        if (hour >= 11 && hour < 14) return "午餐時段";
+        if (hour >= 14 && hour < 18) return "下午時段";
+        if (hour >= 18 && hour < 23) return "夜間警備";
+        return "深夜時段";
+      }
 
-       function getTimePeriod(startTime) {
-         const hour = new Date(startTime).getHours();
-         if (hour >= 5 && hour < 11) return "上午時段";
-         if (hour >= 11 && hour < 14) return "午餐時段";
-         if (hour >= 14 && hour < 18) return "下午時段";
-         if (hour >= 18 && hour < 23) return "夜間警備";
-         return "深夜時段";
-       }
+      function renderWeather(data) {
+        const forecasts = data.forecasts;
+        const current = forecasts[0];
+        const others = forecasts.slice(1);
 
-       function renderWeather(data) {
-         const forecasts = data.forecasts;
-         const current = forecasts[0];
-         const others = forecasts.slice(1);
+        // 1. 渲染 Hero Card (主畫面)
+        const advice = getAdvice(current.rain, current.maxTemp);
+        const period = getTimePeriod(current.startTime);
+        const avgTemp = Math.round(
+          (parseInt(current.maxTemp) + parseInt(current.minTemp)) / 2
+        );
 
-         // 1. 渲染 Hero Card (主畫面)
-         const advice = getAdvice(current.rain, current.maxTemp);
-         const period = getTimePeriod(current.startTime);
-         const avgTemp = Math.round(
-           (parseInt(current.maxTemp) + parseInt(current.minTemp)) / 2
-         );
-
-         document.getElementById("heroCard").innerHTML = `
+        document.getElementById("heroCard").innerHTML = `
       	<div class="hero-card">
       		<div class="hero-period">${period}</div>
       		<div class="hero-temp-container">
@@ -419,23 +418,23 @@
       	</div>
       `;
 
-         // 2. 渲染稍後預報 (包含明天判斷)
-         const scrollContainer = document.getElementById("futureForecasts");
-         scrollContainer.innerHTML = "";
+        // 2. 渲染稍後預報 (包含明天判斷)
+        const scrollContainer = document.getElementById("futureForecasts");
+        scrollContainer.innerHTML = "";
 
-         // 抓今天的日期數字 (例如 24)
-         const todayDate = new Date().getDate();
+        // 抓今天的日期數字 (例如 24)
+        const todayDate = new Date().getDate();
 
-         others.forEach((f) => {
-           let p = getTimePeriod(f.startTime);
+        others.forEach((f) => {
+          let p = getTimePeriod(f.startTime);
 
-           // 判斷該預報的日期是否跟今天不同，不同就是明天
-           const fDate = new Date(f.startTime);
-           if (fDate.getDate() !== todayDate) {
-             p = "明日 " + p;
-           }
+          // 判斷該預報的日期是否跟今天不同，不同就是明天
+          const fDate = new Date(f.startTime);
+          if (fDate.getDate() !== todayDate) {
+            p = "明日 " + p;
+          }
 
-           scrollContainer.innerHTML += `
+          scrollContainer.innerHTML += `
       		<div class="mini-card">
       			<div class="mini-time">${p}</div>
       			<div class="mini-icon">${getWeatherIcon(f.weather)}</div>
@@ -443,51 +442,51 @@
       			<div>💧 ${f.rain}</div>
       		</div>
       	`;
-         });
+        });
 
-         // 3. 右上角顯示今日日期
-         const now = new Date();
-         const month = now.getMonth() + 1;
-         const date = now.getDate();
-         const dayIndex = now.getDay();
-         const days = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+        // 3. 右上角顯示今日日期
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const date = now.getDate();
+        const dayIndex = now.getDay();
+        const days = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
 
-         document.getElementById(
-           "updateTime"
-         ).textContent = `${month}/${date} ${days[dayIndex]} (ZPD)`;
-       }
+        document.getElementById(
+          "updateTime"
+        ).textContent = `${month}/${date} ${days[dayIndex]} (ZPD)`;
+      }
 
-       async function fetchWeather() {
-         try {
-           // 1. 定義「最低等待時間」：1500 毫秒 (1.5秒)
-           const delayPromise = new Promise((resolve) =>
-             setTimeout(resolve, 1500)
-           );
+      async function fetchWeather() {
+        try {
+          // 1. 定義「最低等待時間」：1500 毫秒 (1.5秒)
+          const delayPromise = new Promise((resolve) =>
+            setTimeout(resolve, 1500)
+          );
 
-           // 2. 定義「抓取資料」的工作
-           const fetchPromise = fetch(API_URL).then((res) => res.json());
+          // 2. 定義「抓取資料」的工作
+          const fetchPromise = fetch(API_URL).then((res) => res.json());
 
-           // 3. Promise.all 會等待「兩個都完成」才會往下走
-           // result 陣列裡，第一個是 delay 的結果(沒用到)，第二個是 api 的 json 資料
-           const [_, json] = await Promise.all([delayPromise, fetchPromise]);
+          // 3. Promise.all 會等待「兩個都完成」才會往下走
+          // result 陣列裡，第一個是 delay 的結果(沒用到)，第二個是 api 的 json 資料
+          const [_, json] = await Promise.all([delayPromise, fetchPromise]);
 
-           if (json.success) {
-             renderWeather(json.data);
+          if (json.success) {
+            renderWeather(json.data);
 
-             // 資料處理好後，隱藏 Loading，顯示主畫面
-             document.getElementById("loading").style.display = "none";
-             document.getElementById("mainContent").style.display = "block";
-           } else {
-             throw new Error("API Error");
-           }
-         } catch (e) {
-           console.error(e);
-           // 錯誤提示也使用角色口吻
-           alert("天氣資料讀取失敗，狐狸尼克偷走電纜了！");
-         }
-       }
+            // 資料處理好後，隱藏 Loading，顯示主畫面
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("mainContent").style.display = "block";
+          } else {
+            throw new Error("API Error");
+          }
+        } catch (e) {
+          console.error(e);
+          // 錯誤提示也使用角色口吻
+          alert("天氣資料讀取失敗，狐狸尼克偷走電纜了！");
+        }
+      }
 
-       document.addEventListener("DOMContentLoaded", fetchWeather);
+      document.addEventListener("DOMContentLoaded", fetchWeather);
     </script>
   </body>
 </html>
